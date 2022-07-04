@@ -1,0 +1,10 @@
+﻿Sample name,MPI-4,Distance from slip layer (m)
+Test-1,0.71,0
+Test-2,0.645,0.01
+Test-3,0.612,0.1
+Test-4,0.625,5
+Test-5,0.631,-5
+Test-6,0.651,0.005
+Test-7,0.624,-0.1
+Test-8,0.611,1
+Test-9,0.695,0.002
