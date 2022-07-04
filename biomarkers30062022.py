@@ -56,21 +56,21 @@ except IndexError:
 ''' Define fault and thermal properties '''
 
 ''' Fault half width (m, can be a single value or vector of values) '''
-width = [5*10**(-3), 1*10**(-2), 1*10**(-3)]
+N_width = 10
+width = np.linspace(1*10**(-3), 1*10**(-2), N_width)
 halfwidth = [x/2 for x in width]
-N_width = len(halfwidth)
 halfwidth_series = pd.Series(halfwidth)
 
 ''' Friction (dynamic at this stage, come back and use average friction. This
 can be a single value or vector of values) '''
-mu = [0.1, 0.6]
-N_mu = len(mu)
+N_mu = 10 
+mu = np.linspace(0.1, 0.6, num=N_mu)
 mu_series = pd.Series(mu)
 
 ''' Displacement values to iterate over (vector, m)'''
 slip_min = 0.2
 slip_max = 3
-N_slip = 10
+N_slip = 100
 slip = np.linspace(slip_min, slip_max, N_slip)
 slip_series = pd.Series(slip)
 
@@ -84,7 +84,7 @@ alpha = 1.5 * 10**(-6)
 v = 0.8
 
 ''' Ambient temperature (Celsius) '''
-T0 = 300
+T0 = 100
 
 ''' Density (g/m3) '''
 density = 2000
@@ -134,7 +134,7 @@ MPI4_bg = 0.5056
 ''' Define grid '''
 Ng = 50
 
-x = np.logspace(-4, 0.1, Ng+1)
+x = np.logspace(-4, 0.1, Ng+1) 
 t = np.logspace(-2, 4, Ng)
 
 xmat = np.array([x,]*len(t)).transpose()
@@ -251,8 +251,8 @@ for fric in mu:
             
             MPI4calc = F * 0.85
             MPI4_output[:,:,disp_idx, a_idx, mu_idx] = MPI4calc
-            MPI4max_output[disp_idx, a_idx, mu_idx] = max(MPI4calc[0,:])        
-            MPI4max_ind = np.argmax(MPI4calc[0,:], axis = 0)
+            MPI4max_output[disp_idx, a_idx, mu_idx] = np.max(MPI4calc[0,:])        
+            MPI4max_ind = np.argmax(MPI4calc[0,:])
             MPI4_ind_out[disp_idx, a_idx, mu_idx] = MPI4max_ind
                 
             Tmax_output[disp_idx, a_idx, mu_idx] =  np.amax(theta[0, :, disp_idx, a_idx, mu_idx])
@@ -283,39 +283,101 @@ sigma = 0.038/2
 
 ''' Number of maturities to target '''
 
-MPI4_target = np.array([0.6, 0.62, 0.7])
+MPI4_target = np.array([0.6, 0.7])
 
-Tmax_hits = np.zeros(shape = (len(Tmax_rs),len(MPI4_target)))
-tau_hits = np.zeros(shape = (len(Tmax_rs),len(MPI4_target)))
-slip_hits = np.zeros(shape = (len(Tmax_rs),len(MPI4_target)))
-MPI4_hits = np.zeros(shape = (len(Tmax_rs),len(MPI4_target)))
-Tmax_ind_hits = np.zeros(shape = (len(Tmax_rs),len(MPI4_target)))
-MPI4max_ind_hits = np.zeros(shape = (len(Tmax_rs),len(MPI4_target)))
-
-Tprofile_hits = np.zeros(shape = (len(Tmax_rs), np.shape(theta)[1], len(MPI4_target)))
-MPI4profile_hits = np.zeros(shape = (len(Tmax_rs), np.shape(theta)[1], len(MPI4_target))) 
+Tmax_hits = np.empty(shape = (len(Tmax_rs),len(MPI4_target)))
+Tmax_ind_hits = np.empty(shape = (len(Tmax_rs),len(MPI4_target)))
+Tprofile_hits = np.empty(shape = ( np.shape(theta)[0], len(Tmax_rs), len(MPI4_target)))
 
 
-for i in MPI4_target:
-    MPI4_idx1 = np.where(MPI4_target == i)
-    MPI4_idx = MPI4_idx1[0][0]
+tau_hits = np.empty(shape = (len(Tmax_rs),len(MPI4_target)))
+slip_hits = np.empty(shape = (len(Tmax_rs),len(MPI4_target)))
+
+MPI4max_hits = np.empty(shape = (len(Tmax_rs),len(MPI4_target)))
+MPI4max_ind_hits = np.empty(shape = (len(Tmax_rs),len(MPI4_target)))
+MPI4profile_hits = np.empty(shape = (np.shape(theta)[0], len(Tmax_rs), len(MPI4_target))) 
+
+Tmax_hits[:,:] = np.nan
+Tprofile_hits[:,:,:,] = np.nan
+MPI4profile_hits[:,:,:] = np.nan
+
+
+for targ in MPI4_target:
+    targ_idx1 = np.where(MPI4_target == targ)
+    targ_idx = targ_idx1[0][0]
     
-    hit_idx = np.where(MPI4max_rs[:,0] >= MPI4_target[MPI4_idx] )[0]
+    hit_idx = np.where(MPI4max_rs[:,0] >= MPI4_target[targ_idx] )[0]
     
     idx_range = np.arange(0,len(hit_idx),1)
     
     for idx in idx_range:
-       MPI4_hits[idx,MPI4_idx] = MPI4max_rs[hit_idx[idx]]
-       tau_hits[idx,MPI4_idx] = tau_rs[hit_idx[idx]]
-       slip_hits[idx,MPI4_idx] = slip_rs[hit_idx[idx]]
-       Tmax_hits[idx,MPI4_idx] = Tmax_rs[hit_idx[idx]]
-       Tmax_ind_hits[idx,MPI4_idx] = Tmax_ind_rs[hit_idx[idx]]
-       MPI4max_ind_hits[idx,MPI4_idx] = MPI4max_ind_rs[hit_idx[idx]]
+       MPI4max_hits[idx,targ_idx] = MPI4max_rs[hit_idx[idx]]
+       tau_hits[idx,targ_idx] = tau_rs[hit_idx[idx]]
+       slip_hits[idx,targ_idx] = slip_rs[hit_idx[idx]]
+       Tmax_hits[idx,targ_idx] = Tmax_rs[hit_idx[idx]]
+       Tmax_ind_hits[idx,targ_idx] = Tmax_ind_rs[hit_idx[idx]]
+       MPI4max_ind_hits[idx,targ_idx] = MPI4max_ind_rs[hit_idx[idx]]
        
        
-       Tprofile_hits[idx, :, MPI4_idx] = theta_rs[0, :, hit_idx[idx]]
+       '''MPI4_max_loc'''
        
+       Tprofile_hits[:, idx, targ_idx] = theta_rs[:, int(Tmax_ind_hits[idx,targ_idx]), hit_idx[idx]]
+       MPI4profile_hits[:, idx, targ_idx] = MPI4_out_rs[:, int(MPI4max_ind_hits[idx,targ_idx]), hit_idx[idx]]
+       
+       
+       
+#%% Plots of thermal maturity and temperature rise        
 
+
+rs_loop = np.arange(0, len(Tmax_rs), 1)
+
+       
+for targ in MPI4_target:
+
+    
+    targ_idx1 = np.where(MPI4_target == targ)
+    targ_idx = targ_idx1[0][0]
+    
+    Tprofile_ave = np.nanmean(Tprofile_hits[:,:,targ_idx], axis=1)
+    MPI4profile_ave = np.nanmean(MPI4profile_hits[:,:,targ_idx], axis=1)
+    
+    plt.figure()
+    
+    
+    ''' Temperature profiles '''
+    for step in rs_loop:
+    
+        if Tprofile_hits[0, step, targ_idx] != 0:
+            
+            plt.plot(x, Tprofile_hits[:, step, targ_idx], color = 'grey')
+
+    plt.plot(x, Tprofile_ave, color = 'red')
+            
+    plt.xlim([0, max(width)+0.002])
+    plt.ylabel('Maximum temperature (\N{DEGREE SIGN}C)')
+    plt.xlabel('Distance from slipping layer')
+    plt.show()
+    
+    
+    plt.figure()
+    
+    for step in rs_loop:
+    
+        if MPI4profile_hits[0, step, targ_idx] != 0:
+            
+            plt.plot(x, MPI4profile_hits[:, step, targ_idx], color = 'grey')
+
+    plt.plot(x, MPI4profile_ave, color = 'red')
+            
+    plt.xlim([0, max(width)+0.002])
+    plt.ylabel('Thermal maturity (MPI-4)')
+    plt.xlabel('Distance from slipping layer')
+    plt.show()
+            
+    
+    '''plt.plot(plot_inverse_temp[0:end_idx], b + m * plot_inverse_temp[0:end_idx], '-')'''
+    
+    
     
 
                             
