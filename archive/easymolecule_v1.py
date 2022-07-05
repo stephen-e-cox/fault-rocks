@@ -116,7 +116,7 @@ import regex
 import sys
 from matplotlib import pyplot as plt
 
-def easymolecule_tlim(time, temp, E, A, Trxnlim = False, Iindividual_in = 0):
+def easymolecule_tlim(time, temp, E, A, Trxnlim = 0, Iindividual_in = 0):
     
     
     '''R, gas constant kcal/K/mol'''
@@ -170,7 +170,7 @@ def easymolecule_tlim(time, temp, E, A, Trxnlim = False, Iindividual_in = 0):
     ''' Define whether a minimum temperature is necessary for reaction '''
 
     Tlim = False
-    if Trxnlim is not False:
+    if Trxnlim != 0:
         Tlim = True
         Trxnlim = Trxnlim + 273.15
     
@@ -240,7 +240,7 @@ def easymolecule_tlim(time, temp, E, A, Trxnlim = False, Iindividual_in = 0):
         ''' Calculate individual DI for isothermal steps'''
         DI[Hmat0] = A * np.exp(-1 * ERT[Hmat0]) * difftmat[Hmat0]
         
-        if Tlim is True:
+        if Tlim == True:
             '''Set all time intervals where either the beginning or ending 
             temperatures are below Trxnlim to zero reaction'''
             Itemp = np.zeros(np.shape(T))
@@ -279,7 +279,7 @@ def easymolecule_tlim(time, temp, E, A, Trxnlim = False, Iindividual_in = 0):
         
         
         
-    return F, Findiv, E, A, f, Iindividual_out, Tlim
+    return F, Findiv, E, A, f, Iindividual_out, time, temp
 
 
 
